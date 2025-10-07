@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formularz Klienta</title>
+    <style>
+        #suggestions {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <h1>Formularz Obsługi Klienta</h1>
+    <form id="clientForm">
+        <label for="email">Adres e-mail:</label><br>
+        <input type="email" id="email" name="email" required><br><br>
+
+        <label for="drivers">Liczba kierowców:</label><br>
+        <input type="number" id="drivers" name="drivers" min="1" required><br><br>
+
+        <label for="transport">Rodzaj transportu:</label><br>
+        <select id="transport" name="transport" required>
+            <option value="">-- Wybierz rodzaj transportu --</option>
+            <option value="kabotaz">Kabotaż</option>
+            <option value="cross_trade">Cross Trade</option>
+            <option value="placa_zagraniczna">Płace Zagraniczne</option>
+            <option value="tachograf">System Tachografów</option>
+        </select><br><br>
+
+        <div id="suggestions">
+            <label for="package">Pakiet (sugerowany):</label><br>
+            <select id="package" name="package" required>
+                <option value="standard">Standard</option>
+                <option value="pro">Pro</option>
+                <option value="premium">Premium</option>
+            </select><br><br>
+
+            <label for="device">Urządzenie (sugerowane):</label><br>
+            <select id="device" name="device" required>
+                <option value="dlk_smart">DLK Smart</option>
+                <option value="vdo_link">VDO Link</option>
+            </select><br><br>
+        </div>
+
+        <button type="submit">Wyślij</button>
+    </form>
+
+    <script>
+        const clientFormWebhookURL = 'https://hook.eu2.make.com/hx6v598wckk1s4llt14vrocncw4ojuch'; // Podmień na URL webhooka dla pierwszego formularza
+
+        const driversInput = document.getElementById('drivers');
+        const transportSelect = document.getElementById('transport');
+        const suggestionsDiv = document.getElementById('suggestions');
+        const packageSelect = document.getElementById('package');
+        const deviceSelect = document.getElementById('device');
+
+        // Funkcja do automatycznego sugerowania pakietu i urządzenia
+        function updateSuggestions() {
+            const drivers = parseInt(driversInput.value);
+            const transport = transportSelect.value;
+
+            if (!drivers || !transport) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            // Logika sugerowania pakietu
+            if (drivers < 20) {
+                packageSelect.value = 'standard';
+            } else if (drivers < 50) {
+                packageSelect.value = 'pro';
+            } else {
+                packageSelect.value = 'premium';
+            }
+
+            // Logika sugerowania urządzenia
+            if (drivers <= 10 && transport === 'kabotaz') {
+                deviceSelect.value = 'dlk_smart';
+            } else {
+                deviceSelect.value = 'vdo_link';
+            }
+
+            // Pokaż sekcję z sugestiami
+            suggestionsDiv.style.display = 'block';
+        }
+
+        // Nasłuchiwanie zmian w polach liczby kierowców i rodzaju transportu
+        driversInput.addEventListener('input', updateSuggestions);
+        transportSelect.addEventListener('change', updateSuggestions);
+
+        // Obsługa wysyłania formularza
+        document.getElementById('clientForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+
+            const formData = new FormData(this);
+            const data = {};
+            formData.forEach((value, key) => {
+                data[key] = value;
+            });
+
+            // Wyślij dane do Google Sheets (pierwszy formularz)
+            fetch(clientFormWebhookURL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                if (response.ok) {
+                    alert('Dane zostały wysłane do Google Sheets (Formularz Klienta).');
+                } else {
+                    alert('Wystąpił błąd podczas wysyłania danych (Formularz Klienta).');
+                }
+            });
+        });
+    </script>
+</body>
+</html>
